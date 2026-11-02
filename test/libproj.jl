@@ -204,6 +204,16 @@ end
     @test is_approx(b, (155191.3538124342, 463537.1362732911))
 end
 
+@testset "show a Transformation with several candidate operations" begin
+    trans = Proj.Transformation("EPSG:4326", "EPSG:27700")
+    @test repr(trans) == """
+    Transformation unknown
+        source: WGS 84
+        target: OSGB36 / British National Grid
+        direction: forward
+    """
+end
+
 @testset "Transformation inputs" begin
 
     #crs as GFT.CoordinateReferenceSystemFormat

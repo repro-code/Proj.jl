@@ -143,7 +143,15 @@ function Transformation(
     area::Ptr{PJ_AREA} = C_NULL,
     ctx::Ptr{PJ_CONTEXT} = C_NULL,
 )
-    return Transformation(source_crs.pj, target_crs.pj; always_xy, direction, area, ctx)
+    # keep the CRS objects alive, their finalizers would free the pointers
+    return GC.@preserve source_crs target_crs Transformation(
+        source_crs.pj,
+        target_crs.pj;
+        always_xy,
+        direction,
+        area,
+        ctx,
+    )
 end
 
 function Base.show(io::IO, trans::Transformation)
@@ -161,6 +169,8 @@ function Base.show(io::IO, trans::Transformation)
         target_info = proj_pj_info(target_crs)
         source_description = unsafe_string(source_info.description)
         target_description = unsafe_string(target_info.description)
+        proj_destroy(source_crs)
+        proj_destroy(target_crs)
 
         print(
             io,
@@ -310,12 +320,14 @@ function CoordinateTransformations.compose(
     # can also be typed as trans1 ∘ trans2, typed with \circ
     # a → b ∘ c → d doesn't make much sense if b != c, though we don't enforce it
 
-    source_crs =
+    source_crs = CRS(
         trans1.direction == PJ_FWD ? proj_get_source_crs(trans1.pj) :
-        proj_get_target_crs(trans1.pj)
-    target_crs =
+        proj_get_target_crs(trans1.pj),
+    )
+    target_crs = CRS(
         trans2.direction == PJ_FWD ? proj_get_target_crs(trans2.pj) :
-        proj_get_source_crs(trans2.pj)
+        proj_get_source_crs(trans2.pj),
+    )
     return Transformation(source_crs, target_crs; area, ctx, always_xy)
 end
 

@@ -24,9 +24,12 @@ mutable struct CRS
 end
 
 function CRS(crs::AbstractString, ctx::Ptr{PJ_CONTEXT} = C_NULL)
-    crs = proj_create(crs, ctx)
-    @assert Bool(proj_is_crs(crs)) "Not a CRS:\n$crs"
-    return CRS(crs)
+    pj = proj_create(crs, ctx)
+    if !Bool(proj_is_crs(pj))
+        proj_destroy(pj)
+        throw(AssertionError("Not a CRS:\n$crs"))
+    end
+    return CRS(pj)
 end
 
 const MaybeGFTCRS = Union{GFT.CRS,GFT.Unknown,GFT.Extended}
