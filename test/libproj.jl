@@ -168,6 +168,13 @@ end
     @test inv(PJ_IDENT) == PJ_IDENT
     @test inv(PJ_INV) == PJ_FWD
 
+    # a pipeline has no source and target CRS, but can be inverted
+    trans = Proj.Transformation(
+        "+proj=pipeline +step +proj=unitconvert +xy_in=deg +xy_out=rad +step +proj=utm +zone=32 +ellps=WGS84",
+    )
+    @test is_approx(trans(a), b)
+    @test is_approx(inv(trans)(b), a)
+
     @test_throws ArgumentError Proj.Transformation("EPSG:28992")
     trans = Proj.Transformation(
         "+proj=pipeline +ellps=GRS80 +step +proj=merc +step +proj=axisswap +order=2,1",

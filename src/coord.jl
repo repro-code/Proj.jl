@@ -202,8 +202,14 @@ function Base.inv(
     area::Ptr{PJ_AREA} = C_NULL,
     ctx::Ptr{PJ_CONTEXT} = C_NULL,
 )
-    source_crs = proj_get_source_crs(trans.pj)
-    target_crs = proj_get_target_crs(trans.pj)
+    # Without an area, use the same operation in the inverse direction
+    if area == C_NULL
+        pj = proj_clone(trans.pj, ctx)
+        pj = always_xy ? normalize_axis_order!(pj; ctx) : pj
+        return Transformation(pj, inv(trans.direction))
+    end
+    source_crs = CRS(proj_get_source_crs(trans.pj))
+    target_crs = CRS(proj_get_target_crs(trans.pj))
 
     return Transformation(
         source_crs,
