@@ -25,6 +25,13 @@ import GeoFormatTypes as GFT
 
 end
 
+@testset "Search paths" begin
+    # so grids downloaded with projsync or proj_download_file are found
+    searchpath = unsafe_string(Proj.proj_info().searchpath)
+    @test occursin(Proj.PROJ_DATA[], searchpath)
+    @test occursin(Proj.proj_context_get_user_writable_directory(false), searchpath)
+end
+
 @testset "Database" begin
     crs = Proj.proj_create_from_database("EPSG", "4326", Proj.PJ_CATEGORY_CRS, false)
     Proj.proj_errno(crs)

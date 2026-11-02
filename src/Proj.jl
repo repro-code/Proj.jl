@@ -161,7 +161,10 @@ function __init__()
 
     # point to the location of the provided shared resources
     PROJ_DATA[] = joinpath(PROJ_jll.artifact_dir, "share", "proj")
-    proj_context_set_search_paths(1, [PROJ_DATA[]])
+    # with search paths set, PROJ no longer looks in the user writable directory,
+    # where projsync and proj_download_file put grids, so add it as well
+    user_writable_directory = proj_context_get_user_writable_directory(false)
+    proj_context_set_search_paths(2, [PROJ_DATA[], user_writable_directory])
 end
 
 end # module
