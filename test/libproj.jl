@@ -73,6 +73,16 @@ end
     Proj.proj_destroy(tgt)
 end
 
+@testset "Transformation between CRS in a context" begin
+    ctx = Proj.proj_context_create()
+    expected = Proj.Transformation("EPSG:4326", "EPSG:28992")(52.16, 5.39)
+    source = Proj.CRS("EPSG:4326", ctx)
+    target = Proj.CRS("EPSG:28992", ctx)
+    @test Proj.Transformation(source, target; ctx)(52.16, 5.39) == expected
+    @test Proj.Transformation(GFT.EPSG(4326), GFT.EPSG(28992); ctx)(52.16, 5.39) ==
+          expected
+end
+
 @testset "Quickstart" begin
     # https://proj.org/development/quickstart.html
 

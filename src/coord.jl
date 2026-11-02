@@ -95,8 +95,8 @@ function Transformation(
     ctx::Ptr{PJ_CONTEXT} = C_NULL,
 )
     return Transformation(
-        CRS(source_crs).pj,
-        CRS(target_crs).pj;
+        CRS(source_crs, ctx),
+        CRS(target_crs, ctx);
         always_xy,
         direction,
         area,
@@ -129,7 +129,7 @@ function Transformation(
     area::Ptr{PJ_AREA} = C_NULL,
     ctx::Ptr{PJ_CONTEXT} = C_NULL,
 )
-    pj = proj_create_crs_to_crs_from_pj(source_crs, target_crs, area, ctx)
+    pj = proj_create_crs_to_crs_from_pj(source_crs, target_crs, area, C_NULL, ctx)
     pj === C_NULL && throw(ArgumentError("Cannot create the requested coordinate transformation."))
     pj = always_xy ? normalize_axis_order!(pj; ctx) : pj
     return Transformation(pj, direction)
