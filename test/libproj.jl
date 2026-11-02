@@ -550,6 +550,34 @@ end
         s12_, azi1_, azi2_ = Proj.geod_inverse(geod, lat1, lon1, lat2, lon2)
         s12 ≈ s12_ && azi1 ≈ azi1_
     end
+
+    line = Proj.geod_setdistance(inverse_line, 1000)
+    @test line.s13 == 1000
+    @test inverse_line.s13 ≈ s12
+end
+
+@testset "Geodesic polygons" begin
+    geod = Proj.geod_geodesic(6378137, 1 / 298.257223563)
+    lats = [0.0, 0.0, 1.0, 1.0]
+    lons = [0.0, 1.0, 1.0, 0.0]
+
+    polygon = Proj.geod_polygon_init(Proj._null(Proj.geod_polygon), 0)
+    for (lat, lon) in zip(lats, lons)
+        polygon = Proj.geod_polygon_addpoint(geod, polygon, lat, lon)
+    end
+    @test polygon.num == 4
+    area, perimeter = Proj.geod_polygon_compute(geod, polygon)
+    @test (area, perimeter) == Proj.geod_polygonarea(geod, lats, lons)
+    @test area > 1e10
+    polygon = Proj.geod_polygon_clear(polygon)
+    @test polygon.num == 0
+
+    # a polyline of one edge of 1000 m
+    polyline = Proj.geod_polygon_init(Proj._null(Proj.geod_polygon), 1)
+    polyline = Proj.geod_polygon_addpoint(geod, polyline, 0, 0)
+    polyline = Proj.geod_polygon_addedge(geod, polyline, 90, 1000)
+    @test polyline.num == 2
+    @test Proj.geod_polygon_compute(geod, polyline)[2] ≈ 1000
 end
 
 @testset "GeoInterface" begin

@@ -169,8 +169,15 @@ function geod_position_relative(
     return geod_position(line, line.s13 * relative_arclength)
 end
 
+"""
+    geod_setdistance(l::geod_geodesicline, s13::Real)::geod_geodesicline
+
+Return a copy of the line `l` with its end point at distance `s13`.
+"""
 function geod_setdistance(l::geod_geodesicline, s13::Real)
-    geod_setdistance(Ref(l), Cdouble(l13))
+    ref = Ref(l)
+    geod_setdistance(ref, Cdouble(s13))
+    return ref[]
 end
 
 """
@@ -257,29 +264,39 @@ function _null(::Type{geod_polygon})
     )
 end
 
+# `geod_polygon` is immutable, so these functions return the updated copy, which has
+# to be used for the next call: `p = geod_polygon_addpoint(g, p, lat, lon)`.
+
 function geod_polygon_init(p::geod_polygon, polylinep::Int = 1)
     polylinep_Cint = Cint(polylinep)
     @assert polylinep_Cint == polylinep "Your integer is too large and there will be an under/overflow error.  Please pass an Cint."
-    geod_polygon_init(Ref(p), polylinep_Cint)
-    return p
+    ref = Ref(p)
+    geod_polygon_init(ref, polylinep_Cint)
+    return ref[]
 end
 
-geod_polygon_clear(p::geod_polygon) = geod_polygon_clear(Ref(p))
+function geod_polygon_clear(p::geod_polygon)
+    ref = Ref(p)
+    geod_polygon_clear(ref)
+    return ref[]
+end
 
 function geod_polygon_addpoint(g::geod_geodesic, p::geod_polygon, lat::Real, lon::Real)
-    geod_polygon_addpoint(Ref(g), Ref(p), Cdouble(lat), Cdouble(lon))
-    return p
+    ref = Ref(p)
+    geod_polygon_addpoint(Ref(g), ref, Cdouble(lat), Cdouble(lon))
+    return ref[]
 end
 
 function geod_polygon_addedge(g::geod_geodesic, p::geod_polygon, azi::Real, s::Real)
-    geod_polygon_addedge(Ref(g), Ref(p), Cdouble(azi), Cdouble(s))
-    return p
+    ref = Ref(p)
+    geod_polygon_addedge(Ref(g), ref, Cdouble(azi), Cdouble(s))
+    return ref[]
 end
 
 """
     geod_polygon_compute(g::geod_geodesic, p::geod_polygon, reverse::Bool = false, sign::Bool = true)
 
-Returns a tuple of `(area, perimeter)` in m² and m respectively.  Area is only returned if `polyline` is nonzero in the call to `geod_polygon_init`.
+Returns a tuple of `(area, perimeter)` in m² and m respectively.  Area is only returned if `polylinep` is zero in the call to `geod_polygon_init`.
 """
 function geod_polygon_compute(
     g::geod_geodesic,
