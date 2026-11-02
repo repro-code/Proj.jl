@@ -45,5 +45,32 @@ disabled by default. To enable from Julia, run `Proj.enable_network!()`.
 a way to temporarily enable or disable it in a do-block. Note that it needs to be set
 before creating a transformation, otherwise it will have no effect.
 
+A transformation is much faster with a local copy of the grid than with the remote one.
+For example, to get heights above the EGM2008 geoid, download its grid once:
+
+```julia
+Proj.with_network() do
+    Proj.proj_download_file("us_nga_egm08_25.tif", false, C_NULL, C_NULL)
+end
+trans = Proj.Transformation("EPSG:4979", "EPSG:4326+3855", always_xy=true)
+trans(5.39, 52.16, 0.0)
+# -> (5.39, 52.16, -43.47015119018554)
+```
+
+The grid is saved in `Proj.proj_context_get_user_writable_directory(false)`, and used
+from then on, also without network access. If a grid is missing, PROJ can fall back to
+a transformation without it, which here leaves the height unchanged, without an error.
+
+PROJ keeps only a few decompressed tiles of a grid in memory. Points spread over a large
+area each need a different tile, so transform them in spatial order. For 10,000 random
+points on the globe, sorting them by 10 degree cells makes this transformation 9 times
+faster:
+
+```julia
+order = sortperm(collect(zip(floor.(lat ./ 10), floor.(lon ./ 10))))
+points = trans.(lon[order], lat[order], 0.0)
+points = points[invperm(order)]  # back in the original order
+```
+
 API documentation for the underlying C API may be found here:
 https://proj.org/development/reference/index.html
