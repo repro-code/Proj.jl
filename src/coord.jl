@@ -10,7 +10,9 @@ API.
 To do the transformation on coordinates, call an instance of this struct like a function.
 See below for an example. These functions accept either 2 to 4 numbers, or 1 collection of 2
 to 4 numbers, with the first two required numbers representing x and y coordinates. Number 3
-is the elevation (defaults to 0), and number 4 is the time in years (defaults to Inf).
+is the elevation (defaults to 0), and number 4 is the time in years (defaults to Inf). Other
+GeoInterface points are transformed with their X, Y and Z, if they have one, and their M is
+returned unchanged.
 
 `source_crs` and `target_crs` can be:
 - a "AUTHORITY:CODE", like EPSG:25832. When using that syntax for a source CRS, the created
@@ -250,16 +252,19 @@ end
 function (trans::Transformation)(coord)
     (GI.isgeometry(coord) && GI.geomtrait(coord)) == GI.PointTrait() ||
         throw(ArgumentError("Argument is not a Point geometry"))
-    c = GI.convert(Coord, GI.PointTrait(), coord)
-    p = proj_trans(trans.pj, trans.direction, c)
-    n = GI.ncoord(coord)
-    if n == 2
-        return p.x, p.y
-    elseif n == 3
-        return p.x, p.y, p.z
-    else
-        return p.x, p.y, p.z, p.t
+    # A collection of 2 to 4 numbers is x, y, z and time
+    if coord isa Union{AbstractVector,Tuple}
+        p = proj_trans(trans.pj, trans.direction, Coord(coord))
+        n = length(coord)
+        return n == 2 ? (p.x, p.y) : n == 3 ? (p.x, p.y, p.z) : (p.x, p.y, p.z, p.t)
     end
+    # Other points have GeoInterface coordinates, where M is passed through
+    p = proj_trans(trans.pj, trans.direction, GI.convert(Coord, GI.PointTrait(), coord))
+    if GI.ismeasured(coord)
+        m = GI.m(coord)
+        return GI.is3d(coord) ? (p.x, p.y, p.z, m) : (p.x, p.y, m)
+    end
+    return GI.is3d(coord) ? (p.x, p.y, p.z) : (p.x, p.y)
 end
 
 """

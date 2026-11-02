@@ -95,18 +95,12 @@ GI.y(coord::Coord) = coord.y
 GI.z(coord::Coord) = coord.z
 GI.m(coord::Coord) = coord.t
 
+# M isn't time, so it's left out
 function GI.convert(::Type{Coord}, ::GI.PointTrait, geom)
-    n = GI.ncoord(geom)
-    if n == 2
-        return Coord(GI.x(geom), GI.y(geom))
-    elseif n == 3
-        return Coord(GI.x(geom), GI.y(geom), GI.z(geom))
-    elseif n == 4
-        return Coord(GI.x(geom), GI.y(geom), GI.z(geom), GI.m(geom))
-    else
-        error("Coord takes 2 to 4 numbers")
-    end
+    z = GI.is3d(geom) ? GI.z(geom) : 0.0
+    return Coord(GI.x(geom), GI.y(geom), z)
 end
+GI.convert(::Type{Coord}, ::GI.PointTrait, coord::Coord) = coord
 
 
 # type aliases

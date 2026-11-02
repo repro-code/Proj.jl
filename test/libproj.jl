@@ -567,6 +567,24 @@ end
     @test length(tp) == 2
     @test tp[1] ≈ 129604.1711
     @test tp[2] ≈ 668374.4875
+
+    # M is passed through, and isn't used as the time of the coordinate
+    x, y = trans(5.39, 52.16)
+    @test trans(GI.Point{false,true}(5.39, 52.16, 7.0)) == (x, y, 7.0)
+    x, y, z = trans(5.39, 52.16, 10.0)
+    @test trans(GI.Point{true,true}(5.39, 52.16, 10.0, 7.0)) == (x, y, z, 7.0)
+    @test GI.convert(Proj.Coord, GI.Point{false,true}(5.39, 52.16, 7.0)) ==
+          Proj.Coord(5.39, 52.16)
+    @test GI.convert(Proj.Coord, GI.Point{true,true}(5.39, 52.16, 10.0, 7.0)) ==
+          Proj.Coord(5.39, 52.16, 10.0)
+
+    # a pipeline that moves the point 1 m per year after 2000
+    trans = Proj.Transformation(
+        "+proj=pipeline +step +proj=cart +ellps=WGS84 +step +proj=helmert +x=0 +dx=1 +t_epoch=2000 +convention=position_vector +step +inv +proj=cart +ellps=WGS84",
+    )
+    @test trans(GI.Point{true,true}(0.0, 0.0, 0.0, 2010.0)) == (0.0, 0.0, 0.0, 2010.0)
+    # a collection of 4 numbers is x, y, z and time
+    @test trans([0.0, 0.0, 0.0, 2010.0]) == (0.0, 0.0, 10.0, 2010.0)
 end
 
 @testset "Proj.identify" begin
