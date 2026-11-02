@@ -462,6 +462,18 @@ end
 
     crs = Proj.CRS("EPSG:4326+3855")
     @test length(collect(crs)) == 2
+    @test Proj.is_compound(crs)
+    @test Proj.is_geographic(crs)
+    @test !Proj.is_projected(crs)
+
+    crs = Proj.CRS("EPSG:28992+5709")
+    @test Proj.is_projected(crs)
+    @test !Proj.is_geographic(crs)
+
+    crs = Proj.CRS("+proj=longlat +ellps=bessel +towgs84=565,50,465 +type=crs")
+    @test Proj.is_bound(crs)
+    @test Proj.is_geographic(crs)
+    @test !Proj.is_projected(crs)
 end
 
 @testset "GFT" begin

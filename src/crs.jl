@@ -56,9 +56,9 @@ Base.unsafe_convert(::Type{Ptr{Cvoid}}, c::CRS) = c.pj
 
 function is_type(crs::CRS, types::NTuple{N,PJ_TYPE}) where {N}
     if is_compound(crs)
-        mapreduce(Fix2(is_type, types), |, crs, init = false)
+        mapreduce(Base.Fix2(is_type, types), |, crs, init = false)
     elseif is_bound(crs)
-        is_type(proj_get_source_crs(crs), types)
+        is_type(CRS(proj_get_source_crs(crs)), types)
     else
         proj_get_type(crs) in types
     end
