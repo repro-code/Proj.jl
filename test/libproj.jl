@@ -130,7 +130,7 @@ end
     # the database
     @test repr(trans) == """
     Transformation pipeline
-        description: UTM zone 32N
+        description: axis order change (2D) + UTM zone 32N (with axis order normalized for visualization)
         definition: proj=pipeline step proj=unitconvert xy_in=deg xy_out=rad step proj=utm zone=32 ellps=WGS84
         direction: forward
     """
